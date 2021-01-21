@@ -53,6 +53,12 @@ class CompactFormatter(logging.Formatter):
         record.name = record.name.rpartition('.')[-1]
         return super().format(record)
 
+# Adds a comma as a delimiter and returns the string result by default
+# If self.comma_delimited_integers is false it simply returns the number as a string
+class delimit(self, env):
+    def integer(integer):
+        formatter = '{:,d}' if self.comma_delimited_integers else '{d}'
+        return f'{formatter}'.format(integer)
 
 def make_logger(name, *, handler, level):
     '''Return the root ElectrumX logger.'''

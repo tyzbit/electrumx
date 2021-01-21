@@ -211,9 +211,9 @@ class SessionManager:
             await self.session_event.wait()
             self.session_event.clear()
             if not paused and len(self.sessions) >= max_sessions:
-                self.logger.info(f'maximum sessions {max_sessions:,d} '
+                self.logger.info(f'maximum sessions {util.delimit.integer(max_sessions)} '
                                  f'reached, stopping new connections until '
-                                 f'count drops to {low_watermark:,d}')
+                                 f'count drops to {util.delimit.integer(low_watermark)}')
                 await self._stop_servers(service for service in self.servers
                                          if service.protocol != 'rpc')
                 paused = True
@@ -536,14 +536,14 @@ class SessionManager:
             n = None
             history = await db.limited_history(hashX, limit=limit)
             for n, (tx_hash, height) in enumerate(history):
-                lines.append(f'History #{n:,d}: height {height:,d} '
+                lines.append(f'History #{util.delimit.integer(n)}: height {util.delimit.integer(height)} '
                              f'tx_hash {hash_to_hex_str(tx_hash)}')
             if n is None:
                 lines.append('No history found')
             n = None
             utxos = await db.all_utxos(hashX)
             for n, utxo in enumerate(utxos, start=1):
-                lines.append(f'UTXO #{n:,d}: tx_hash '
+                lines.append(f'UTXO #{util.delimit.integer(n)}: tx_hash '
                              f'{hash_to_hex_str(utxo.tx_hash)} '
                              f'tx_pos {utxo.tx_pos:,d} height '
                              f'{utxo.height:,d} value {utxo.value:,d}')
@@ -570,7 +570,7 @@ class SessionManager:
         count = non_negative_integer(count)
         if not self.bp.force_chain_reorg(count):
             raise RPCError(BAD_REQUEST, 'still catching up with daemon')
-        return f'scheduled a reorg of {count:,d} blocks'
+        return f'scheduled a reorg of {util.delimit.integer(count)} blocks'
 
     # --- External Interface
 
@@ -665,7 +665,7 @@ class SessionManager:
             tx_pos = tx_hashes.index(tx_hash)
         except ValueError:
             raise RPCError(BAD_REQUEST,
-                           f'tx {hash_to_hex_str(tx_hash)} not in block at height {height:,d}')
+                           f'tx {hash_to_hex_str(tx_hash)} not in block at height {util.delimit.integer(height)}')
         branch, merkle_cost = await self._merkle_branch(height, tx_hashes, tx_pos)
         return branch, tx_pos, tx_hashes_cost + merkle_cost
 
@@ -676,7 +676,7 @@ class SessionManager:
             tx_hash = tx_hashes[tx_pos]
         except IndexError:
             raise RPCError(BAD_REQUEST,
-                           f'no tx at position {tx_pos:,d} in block at height {height:,d}')
+                           f'no tx at position {util.delimit.integer(tx_pos)} in block at height {util.delimit.integer(height)}')
         branch, merkle_cost = await self._merkle_branch(height, tx_hashes, tx_pos)
         return branch, hash_to_hex_str(tx_hash), tx_hashes_cost + merkle_cost
 
@@ -722,7 +722,7 @@ class SessionManager:
         try:
             return await self.db.raw_header(height)
         except IndexError:
-            raise RPCError(BAD_REQUEST, f'height {height:,d} '
+            raise RPCError(BAD_REQUEST, f'height {util.delimit.integer(height)} '
                            'out of range') from None
 
     async def broadcast_transaction(self, raw_tx):
@@ -1145,9 +1145,9 @@ class ElectrumX(SessionBase):
         max_height = self.db.db_height
         if not height <= cp_height <= max_height:
             raise RPCError(BAD_REQUEST,
-                           f'require header height {height:,d} <= '
-                           f'cp_height {cp_height:,d} <= '
-                           f'chain height {max_height:,d}')
+                           f'require header height {util.delimit.integer(height)} <= '
+                           f'cp_height {util.delimit.integer(cp_height)} <= '
+                           f'chain height {util.delimit.integer(max_height)}')
         branch, root = await self.db.header_branch_and_root(cp_height + 1,
                                                             height)
         return {
@@ -1375,7 +1375,7 @@ class ElectrumX(SessionBase):
                 tx_hash = tx_hashes[tx_pos]
             except IndexError:
                 raise RPCError(BAD_REQUEST,
-                               f'no tx at position {tx_pos:,d} in block at height {height:,d}')
+                               f'no tx at position {util.delimit.integer(tx_pos)} in block at height {util.delimit.integer(height)}')
             self.bump_cost(cost)
             return hash_to_hex_str(tx_hash)
 

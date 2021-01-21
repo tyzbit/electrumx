@@ -194,6 +194,11 @@ These environment variables are optional:
   The default Python logging level, a case-insensitive string.  Useful values
   are 'debug', 'info', 'warning' and 'error'.
 
+.. envvar:: COMMA_DELIMITED_INTEGERS
+
+  By default, this is set to true and whole numbers (integers) are comma 
+  delimited in the logs.  Set this to false to log whole numbers without commas.
+
 .. envvar:: ALLOW_ROOT
 
   Set this environment variable to anything non-empty to allow running

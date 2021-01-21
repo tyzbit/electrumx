@@ -22,7 +22,7 @@ from aiorpcx import (connect_rs, RPCSession, SOCKSProxy, Notification, handler_i
                      sleep, ignore_after)
 
 from electrumx.lib.peer import Peer
-from electrumx.lib.util import class_logger
+from electrumx.lib.util import class_logger, delimit
 
 PEER_GOOD, PEER_STALE, PEER_NEVER, PEER_BAD = range(4)
 STALE_SECS = 3 * 3600
@@ -356,8 +356,8 @@ class PeerManager:
         if not isinstance(their_height, int):
             raise BadPeerError(f'invalid height {their_height}')
         if abs(our_height - their_height) > 5:
-            raise BadPeerError(f'bad height {their_height:,d} '
-                               f'(ours: {our_height:,d})')
+            raise BadPeerError(f'bad height {delimit.integer(their_height)} '
+                               f'(ours: {delimit.integer(our_height)})')
 
         # Check prior header too in case of hard fork.
         check_height = min(our_height, their_height)

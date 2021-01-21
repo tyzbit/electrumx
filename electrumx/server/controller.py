@@ -11,7 +11,7 @@ from aiorpcx import _version as aiorpcx_version, TaskGroup
 
 import electrumx
 from electrumx.lib.server_base import ServerBase
-from electrumx.lib.util import version_string
+from electrumx.lib.util import version_string, delimit
 from electrumx.server.db import DB
 from electrumx.server.mempool import MemPool, MemPoolAPI
 from electrumx.server.session import SessionManager
@@ -91,7 +91,7 @@ class Controller(ServerBase):
         self.logger.info(f'aiorpcX version: {version_string(aiorpcx_version)}')
         self.logger.info(f'supported protocol versions: {min_str}-{max_str}')
         self.logger.info(f'event loop policy: {env.loop_policy}')
-        self.logger.info(f'reorg limit is {env.reorg_limit:,d} blocks')
+        self.logger.info(f'reorg limit is {delimit.integer(env.reorg_limit)} blocks')
 
         notifications = Notifications()
         Daemon = env.coin.DAEMON

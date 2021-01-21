@@ -19,7 +19,7 @@ from electrumx.server.daemon import DaemonError
 from electrumx.lib.hash import hash_to_hex_str, HASHX_LEN
 from electrumx.lib.script import is_unspendable_legacy, is_unspendable_genesis
 from electrumx.lib.util import (
-    chunks, class_logger, pack_le_uint32, pack_le_uint64, unpack_le_uint64
+    chunks, class_logger, pack_le_uint32, pack_le_uint64, unpack_le_uint64, delimit
 )
 from electrumx.server.db import FlushData
 
@@ -87,12 +87,12 @@ class Prefetcher(object):
         daemon_height = await self.daemon.height()
         behind = daemon_height - height
         if behind > 0:
-            self.logger.info('catching up to daemon height {:,d} '
-                             '({:,d} blocks behind)'
-                             .format(daemon_height, behind))
+            self.logger.info(f'catching up to daemon height '
+                             f'{delimit.integer(daemon_height)} '
+                             f'({delimit.integer(behind)} blocks behind)')
         else:
-            self.logger.info('caught up to daemon height {:,d}'
-                             .format(daemon_height))
+            self.logger.info('caught up to daemon height '
+                             f'{delimit.integer(daemon_height)}')
 
     async def _prefetch_blocks(self):
         '''Prefetch some blocks and put them on the queue.
@@ -115,8 +115,9 @@ class Prefetcher(object):
 
                 hex_hashes = await daemon.block_hex_hashes(first, count)
                 if self.caught_up:
-                    self.logger.info('new block height {:,d} hash {}'
-                                     .format(first + count-1, hex_hashes[-1]))
+                    self.logger.info(f'new block height '
+                                     f'{delimit.integer(first + count-1)} '
+                                     f'hash {hex_hashes[-1]}')
                 blocks = await daemon.raw_blocks(hex_hashes)
 
                 assert count == len(blocks)
@@ -221,7 +222,8 @@ class BlockProcessor(object):
             if not self.db.first_sync:
                 s = '' if len(blocks) == 1 else 's'
                 blocks_size = sum(len(block) for block in raw_blocks) / 1_000_000
-                self.logger.info(f'processed {len(blocks):,d} block{s} size {blocks_size:.2f} MB '
+                self.logger.info(f'processed {delimit.integer(len(blocks))} block{s} '
+                                 f'size {blocks_size:.2f} MB '
                                  f'in {time.time() - start:.1f}s')
             if self._caught_up_event.is_set():
                 await self.notifications.on_block(self.touched, self.height)
@@ -246,14 +248,14 @@ class BlockProcessor(object):
         if count is None:
             self.logger.info('chain reorg detected')
         else:
-            self.logger.info(f'faking a reorg of {count:,d} blocks')
+            self.logger.info(f'faking a reorg of {delimit.integer(count)} blocks')
         await self.flush(True)
 
         async def get_raw_blocks(last_height, hex_hashes):
             heights = range(last_height, last_height - len(hex_hashes), -1)
             try:
                 blocks = [self.db.read_raw_block(height) for height in heights]
-                self.logger.info(f'read {len(blocks)} blocks from disk')
+                self.logger.info(f'read {delimit.integer(len(blocks))} blocks from disk')
                 return blocks
             except FileNotFoundError:
                 return await self.daemon.raw_blocks(hex_hashes)
@@ -286,8 +288,10 @@ class BlockProcessor(object):
         start, count = await self.calc_reorg_range(count)
         last = start + count - 1
         s = '' if count == 1 else 's'
-        self.logger.info(f'chain was reorganised replacing {count:,d} '
-                         f'block{s} at heights {start:,d}-{last:,d}')
+        self.logger.info(f'chain was reorganised replacing '
+                         f'{delimit.integer(count)} '
+                         f'block{s} at heights {delimit.integer(start)}'
+                         f'{delimit.integer(last)}')
 
         return start, last, await self.db.fs_block_hashes(start, count)
 
@@ -372,10 +376,10 @@ class BlockProcessor(object):
         utxo_MB = (db_deletes_size + utxo_cache_size) // one_MB
         hist_MB = (hist_cache_size + tx_hash_size) // one_MB
 
-        self.logger.info('our height: {:,d} daemon: {:,d} '
-                         'UTXOs {:,d}MB hist {:,d}MB'
-                         .format(self.height, self.daemon.cached_height(),
-                                 utxo_MB, hist_MB))
+        self.logger.info(f'our height: {delimit.integer(self.height)} '
+                         f'daemon: {delimit.integer(self.daemon.cached_height())} '
+                         f'UTXOs {delimit.integer(utxo_MB)}MB hist '
+                         f'{delimit.integer(hist_MB)}MB')
 
         # Flush history if it takes up over 20% of cache memory.
         # Flush UTXOs once they take up 80% of cache memory.
@@ -475,10 +479,9 @@ class BlockProcessor(object):
             block = coin.block(raw_block, self.height)
             header_hash = coin.header_hash(block.header)
             if header_hash != self.tip:
-                raise ChainError('backup block {} not tip {} at height {:,d}'
-                                 .format(hash_to_hex_str(header_hash),
-                                         hash_to_hex_str(self.tip),
-                                         self.height))
+                raise ChainError(f'backup block {hash_to_hex_str(header_hash)} '
+                                 f'not tip {hash_to_hex_str(self.tip)} at height '
+                                 f'{delimit.integer(self.height)}')
             self.tip = coin.header_prevhash(block.header)
             is_unspendable = (is_unspendable_genesis if self.height >= genesis_activation
                               else is_unspendable_legacy)
@@ -486,15 +489,14 @@ class BlockProcessor(object):
             self.height -= 1
             self.db.tx_counts.pop()
 
-        self.logger.info('backed up to height {:,d}'.format(self.height))
+        self.logger.info(f'backed up to height {delimit.integer(self.height)}')
 
     def backup_txs(self, txs, is_unspendable):
         # Prevout values, in order down the block (coinbase first if present)
         # undo_info is in reverse block order
         undo_info = self.db.read_undo_info(self.height)
         if undo_info is None:
-            raise ChainError('no undo information found for height {:,d}'
-                             .format(self.height))
+            raise ChainError(f'no undo information found for height {delimit.integer(self.height)}')
         n = len(undo_info)
 
         # Use local vars for speed in the loops
@@ -623,8 +625,7 @@ class BlockProcessor(object):
                 self.db_deletes.append(udb_key)
                 return hashX + tx_num_packed + utxo_value_packed
 
-        raise ChainError('UTXO {} / {:,d} not found in "h" table'
-                         .format(hash_to_hex_str(tx_hash), tx_idx))
+        raise ChainError(f'UTXO {hash_to_hex_str(tx_hash)} / {delimit.integer(tx_idx)} not found in "h" table')
 
     async def _process_prefetched_blocks(self):
         '''Loop forever processing blocks as they arrive.'''
@@ -650,7 +651,7 @@ class BlockProcessor(object):
         await self.flush(True)
         if first_sync:
             self.logger.info(f'{electrumx.version} synced to '
-                             f'height {self.height:,d}')
+                             f'height {delimit.integer(self.height)}')
         # Reopen for serving
         await self.db.open_for_serving()
 
@@ -799,8 +800,7 @@ class LTORBlockProcessor(BlockProcessor):
     def backup_txs(self, txs, is_unspendable):
         undo_info = self.db.read_undo_info(self.height)
         if undo_info is None:
-            raise ChainError('no undo information found for height {:,d}'
-                             .format(self.height))
+            raise ChainError(f'no undo information found for height {delimit.integer(self.height)}')
 
         # Use local vars for speed in the loops
         put_utxo = self.utxo_cache.__setitem__

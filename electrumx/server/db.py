@@ -25,7 +25,7 @@ import electrumx.lib.util as util
 from electrumx.lib.hash import hash_to_hex_str
 from electrumx.lib.merkle import Merkle, MerkleCache
 from electrumx.lib.util import (
-    formatted_time, pack_be_uint16, pack_be_uint32, pack_le_uint64, pack_le_uint32,
+    formatted_time, delimit, pack_be_uint16, pack_be_uint32, pack_le_uint64, pack_le_uint32,
     unpack_le_uint32, unpack_be_uint32, unpack_le_uint64
 )
 from electrumx.server.storage import db_class
@@ -223,9 +223,9 @@ class DB(object):
         self.flush_state(self.utxo_db)
 
         elapsed = self.last_flush - start_time
-        self.logger.info(f'flush #{self.history.flush_count:,d} took '
-                         f'{elapsed:.1f}s.  Height {flush_data.height:,d} '
-                         f'txs: {flush_data.tx_count:,d} ({tx_delta:+,d})')
+        self.logger.info(f'flush #{delimit.integer(self.history.flush_count)} took '
+                         f'{elapsed:.1f}s.  Height {delimit.integer(flush_data.height)} '
+                         f'txs: {delimit.integer(flush_data.tx_count)} ({delimit.integer(tx_delta)})')
 
         # Catch-up stats
         if self.utxo_db.for_sync:
@@ -233,8 +233,8 @@ class DB(object):
             tx_per_sec_gen = int(flush_data.tx_count / self.wall_time)
             tx_per_sec_last = 1 + int(tx_delta / flush_interval)
             eta = estimate_txs_remaining() / tx_per_sec_last
-            self.logger.info(f'tx/sec since genesis: {tx_per_sec_gen:,d}, '
-                             f'since last flush: {tx_per_sec_last:,d}')
+            self.logger.info(f'tx/sec since genesis: {delimit.integer(tx_per_sec_gen)}, '
+                             f'since last flush: {delimit.integer(tx_per_sec_last)}')
             self.logger.info(f'sync time: {formatted_time(self.wall_time)}  '
                              f'ETA: {formatted_time(eta)}')
 
@@ -314,9 +314,9 @@ class DB(object):
             block_count = flush_data.height - self.db_height
             tx_count = flush_data.tx_count - self.db_tx_count
             elapsed = time.time() - start_time
-            self.logger.info(f'flushed {block_count:,d} blocks with '
-                             f'{tx_count:,d} txs, {add_count:,d} UTXO adds, '
-                             f'{spend_count:,d} spends in '
+            self.logger.info(f'flushed {delimit.integer(block_count)} blocks with '
+                             f'{delimit.integer(tx_count)} txs, {delimit.integer(add_count)} UTXO adds, '
+                             f'{delimit.integer(spend_count)} spends in '
                              f'{elapsed:.1f}s, committing...')
 
         self.utxo_flush_count = self.history.flush_count
@@ -387,7 +387,7 @@ class DB(object):
         '''Return the binary header at the given height.'''
         header, n = await self.read_headers(height, 1)
         if n != 1:
-            raise IndexError(f'height {height:,d} out of range')
+            raise IndexError(f'height {delimit.integer(height)} out of range')
         return header
 
     async def read_headers(self, start_height, count):
@@ -400,8 +400,8 @@ class DB(object):
         binary headers, and n is the count of headers returned.
         '''
         if start_height < 0 or count < 0:
-            raise self.DBError(f'{count:,d} headers starting at '
-                               f'{start_height:,d} not on disk')
+            raise self.DBError(f'{delimit.integer(count)} headers starting at '
+                               f'{delimit.integer(start_height)} not on disk')
 
         def read_headers():
             # Read some from disk
@@ -430,7 +430,7 @@ class DB(object):
         in the same order as in the block.
         '''
         if block_height > self.db_height:
-            raise self.DBError(f'block {block_height:,d} not on disk (>{self.db_height:,d})')
+            raise self.DBError(f'block {delimit.integer(block_height)} not on disk (>{self.db_height:,d})')
         assert block_height >= 0
         if block_height > 0:
             first_tx_num = self.tx_counts[block_height - 1]
@@ -642,7 +642,7 @@ class DB(object):
             now = time.time()
             if now > last + 10:
                 last = now
-                self.logger.info(f'DB 1 of 3: {count:,d} entries updated, '
+                self.logger.info(f'DB 1 of 3: {delimit.integer(count)} entries updated, '
                                  f'{cursor * 100 / 65536:.1f}% complete')
         self.logger.info('DB 1 of 3 upgraded successfully')
 
@@ -676,7 +676,7 @@ class DB(object):
             now = time.time()
             if now > last + 10:
                 last = now
-                self.logger.info(f'DB 2 of 3: {count:,d} entries updated, '
+                self.logger.info(f'DB 2 of 3: {delimit.integer(count)} entries updated, '
                                  f'{cursor * 100 / 65536:.1f}% complete')
 
         # Upgrade tx_counts file

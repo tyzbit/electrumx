@@ -17,7 +17,7 @@ from functools import partial
 
 import electrumx.lib.util as util
 from electrumx.lib.util import (
-    pack_be_uint16, pack_le_uint64, unpack_be_uint16_from, unpack_le_uint64,
+    pack_be_uint16, pack_le_uint64, unpack_be_uint16_from, unpack_le_uint64, delimit
 )
 from electrumx.lib.hash import hash_to_hex_str, HASHX_LEN
 
@@ -156,7 +156,7 @@ class History(object):
         if self.db.for_sync:
             elapsed = time.time() - start_time
             self.logger.info(f'flushed history in {elapsed:.1f}s '
-                             f'for {count:,d} addrs')
+                             f'for {delimit.integer(count)} addrs')
 
     def backup(self, hashXs, tx_count):
         # Not certain this is needed, but it doesn't hurt
@@ -186,7 +186,7 @@ class History(object):
                     batch.put(key, value)
             self.write_state(batch)
 
-        self.logger.info(f'backing up removed {nremoves:,d} history entries')
+        self.logger.info(f'backing up removed {delimit.integer(nremoves)} history entries')
 
     def get_txnums(self, hashX, limit=1000):
         '''Generator that returns an unpruned, sorted list of tx_nums in the
@@ -372,7 +372,7 @@ class History(object):
             now = time.time()
             if now > last + 10:
                 last = now
-                self.logger.info(f'DB 3 of 3: {count:,d} entries updated, '
+                self.logger.info(f'DB 3 of 3: {delimit.integer(count)} entries updated, '
                                  f'{cursor * 100 / 65536:.1f}% complete')
 
         self.db_version = max(self.DB_VERSIONS)
