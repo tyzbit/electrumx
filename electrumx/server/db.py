@@ -25,7 +25,7 @@ import electrumx.lib.util as util
 from electrumx.lib.hash import hash_to_hex_str
 from electrumx.lib.merkle import Merkle, MerkleCache
 from electrumx.lib.util import (
-    formatted_time, delimit, pack_be_uint16, pack_be_uint32, pack_le_uint64, pack_le_uint32,
+    delimit, formatted_time, pack_be_uint16, pack_be_uint32, pack_le_uint64, pack_le_uint32,
     unpack_le_uint32, unpack_be_uint32, unpack_le_uint64
 )
 from electrumx.server.storage import db_class

@@ -22,7 +22,7 @@ from aiorpcx import (connect_rs, RPCSession, SOCKSProxy, Notification, handler_i
                      sleep, ignore_after)
 
 from electrumx.lib.peer import Peer
-from electrumx.lib.util import class_logger, delimit
+from electrumx.lib.util import delimit, class_logger
 
 PEER_GOOD, PEER_STALE, PEER_NEVER, PEER_BAD = range(4)
 STALE_SECS = 3 * 3600

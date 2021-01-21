@@ -19,7 +19,7 @@ from electrumx.server.daemon import DaemonError
 from electrumx.lib.hash import hash_to_hex_str, HASHX_LEN
 from electrumx.lib.script import is_unspendable_legacy, is_unspendable_genesis
 from electrumx.lib.util import (
-    chunks, class_logger, pack_le_uint32, pack_le_uint64, unpack_le_uint64, delimit
+    chunks, class_logger, delimit, pack_le_uint32, pack_le_uint64, unpack_le_uint64
 )
 from electrumx.server.db import FlushData
 

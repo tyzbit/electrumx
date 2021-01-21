@@ -55,9 +55,9 @@ class CompactFormatter(logging.Formatter):
 
 # Adds a comma as a delimiter and returns the string result by default
 # If self.comma_delimited_integers is false it simply returns the number as a string
-class delimit(self):
+class delimit(env):
     def __init__(self):
-        self.formatter = '{:,d}' if self.env.comma_delimited_integers else '{d}'
+        self.formatter = '{:,d}' if env.comma_delimited_integers else '{d}'
 
     def integer(integer):
         return f'{self.formatter}'.format(integer)

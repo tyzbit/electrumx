@@ -17,7 +17,7 @@ from functools import partial
 
 import electrumx.lib.util as util
 from electrumx.lib.util import (
-    pack_be_uint16, pack_le_uint64, unpack_be_uint16_from, unpack_le_uint64, delimit
+    delimit, pack_be_uint16, pack_le_uint64, unpack_be_uint16_from, unpack_le_uint64
 )
 from electrumx.lib.hash import hash_to_hex_str, HASHX_LEN
 
